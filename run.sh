@@ -33,15 +33,41 @@ function stop {
     exit
 }
 
-# Change the USER_ID if needed
-if [ ! "$(id -u steam)" -eq "$USER_ID" ]; then
-    log "Changing steam uid to $USER_ID."
-    usermod -o -u "$USER_ID" steam
+if ! [[ "$USER_ID" =~ ^[0-9]+$ ]] || ((10#$USER_ID == 0 || 10#$USER_ID > 2147483647)); then
+    log "USER_ID must be an integer between 1 and 2147483647."
+    exit 1
 fi
-# Change gid if needed
-if [ ! "$(id -g steam)" -eq "$GROUP_ID" ]; then
-    log "Changing steam gid to $GROUP_ID."
-    groupmod -o -g "$GROUP_ID" steam
+if ! [[ "$GROUP_ID" =~ ^[0-9]+$ ]] || ((10#$GROUP_ID == 0 || 10#$GROUP_ID > 2147483647)); then
+    log "GROUP_ID must be an integer between 1 and 2147483647."
+    exit 1
+fi
+
+USER_ID=$((10#$USER_ID))
+GROUP_ID=$((10#$GROUP_ID))
+export USER_ID GROUP_ID
+
+existing_user=$(getent passwd "$USER_ID" | cut -d: -f1)
+if [ -n "$existing_user" ] && [ "$existing_user" != steam ]; then
+    log "USER_ID $USER_ID is already assigned to user '$existing_user'."
+    exit 1
+fi
+existing_group=$(getent group "$GROUP_ID" | cut -d: -f1)
+if [ -n "$existing_group" ] && [ "$existing_group" != steam ]; then
+    log "GROUP_ID $GROUP_ID is already assigned to group '$existing_group'."
+    exit 1
+fi
+
+old_user_id=$(id -u steam)
+old_group_id=$(id -g steam)
+
+# Change the primary group before changing the user ID.
+if [ "$old_group_id" -ne "$GROUP_ID" ]; then
+    log "Changing steam gid from $old_group_id to $GROUP_ID."
+    groupmod -g "$GROUP_ID" steam
+fi
+if [ "$old_user_id" -ne "$USER_ID" ]; then
+    log "Changing steam uid from $old_user_id to $USER_ID."
+    usermod -u "$USER_ID" steam
 fi
 
 [ ! -d /ark/log ] && mkdir /ark/log
@@ -49,6 +75,16 @@ fi
 [ ! -d /ark/staging ] && mkdir /ark/staging
 [ ! -d /ark/steam ] && mkdir /ark/steam
 [ ! -d /ark/.steam ] && mkdir /ark/.steam
+
+# Own the required directory roots, then migrate only files carrying the old
+# steam IDs. This preserves files deliberately owned by other users.
+chown steam:steam /ark /cluster /home/steam /ark/log /ark/backup /ark/staging /ark/steam /ark/.steam
+if [ "$old_group_id" -ne "$GROUP_ID" ]; then
+    find /ark /cluster /home/steam -xdev -gid "$old_group_id" -exec chgrp steam {} +
+fi
+if [ "$old_user_id" -ne "$USER_ID" ]; then
+    find /ark /cluster /home/steam -xdev -uid "$old_user_id" -exec chown steam {} +
+fi
 
 if [ -f "/usr/share/zoneinfo/${TZ}" ]; then
     log "Setting timezone to ${TZ} ..."
@@ -90,8 +126,6 @@ if [ ! -L /etc/arkmanager/instances/main.cfg ]; then
     ln -s /ark/arkmanager.cfg /etc/arkmanager/instances/main.cfg
 fi
 
-# Put steam owner of directories (if the uid changed, then it's needed)
-chown -R steam:steam /ark /home/steam /cluster
 log "###########################################################################"
 
 if [ ! -d /ark/server ] || [ ! -f /ark/server/version.txt ]; then

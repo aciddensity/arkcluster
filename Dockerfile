@@ -36,7 +36,10 @@ RUN <<EOT bash # Install dependencies and clean up
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 EOT
 
+# Update each checksum together with its corresponding archive/version.
 ARG ARKMANAGER_VERSION=1.6.69
+ARG ARKMANAGER_SHA256=29c541f040b6fa1beb1aefcd5b2e58701f01680a2cf8ae87783f18bcf45a0e55
+ARG STEAMCMD_SHA256=cebf0046bfd08cf45da6bc094ae47aa39ebf4155e5ede41373b579b8f1071e7c
 
 ENV USER_ID=1000 \
     GROUP_ID=1000
@@ -49,11 +52,13 @@ EOT
 
 RUN <<EOT bash # Install ark-server-tools
     set -eux
-    curl -fsSL "https://github.com/arkmanager/ark-server-tools/archive/refs/tags/v${ARKMANAGER_VERSION}.tar.gz" | tar xz
+    curl -fsSL --retry 3 -o ark-server-tools.tar.gz "https://github.com/arkmanager/ark-server-tools/archive/refs/tags/v${ARKMANAGER_VERSION}.tar.gz"
+    echo "${ARKMANAGER_SHA256}  ark-server-tools.tar.gz" | sha256sum --check --strict -
+    tar xzf ark-server-tools.tar.gz
     pushd "./ark-server-tools-${ARKMANAGER_VERSION}/tools"
     ./install.sh steam --bindir=/usr/bin
     popd
-    rm -r "ark-server-tools-${ARKMANAGER_VERSION}"
+    rm -r ark-server-tools.tar.gz "ark-server-tools-${ARKMANAGER_VERSION}"
 EOT
 
 RUN <<EOT bash # Create required directories
@@ -77,10 +82,14 @@ RUN chown steam:steam -R /ark /cluster /home/steam
 
 USER steam
 RUN <<EOT bash # Install steamcmd
+    set -eux
     ln -s /ark/steam /home/steam/Steam
     ln -s /ark/.steam /home/steam/.steam
     mkdir -p ~/steamcmd && cd ~/steamcmd
-    curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
+    curl -fsSL --retry 3 -o steamcmd_linux.tar.gz "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
+    echo "${STEAMCMD_SHA256}  steamcmd_linux.tar.gz" | sha256sum --check --strict -
+    tar xzf steamcmd_linux.tar.gz
+    rm steamcmd_linux.tar.gz
     ./steamcmd.sh +quit
 EOT
 

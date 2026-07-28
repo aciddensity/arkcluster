@@ -1,10 +1,10 @@
 build:
-	docker build -f Dockerfile . -t r15ch13/arkcluster:dev
+	docker build -f Dockerfile . -t aciddensity/arkcluster:dev
 
 clean:
-	docker image rm r15ch13/arkcluster:dev ||:
+	docker image rm aciddensity/arkcluster:dev ||:
 
 push:
-	docker image push r15ch13/arkcluster:dev
+	docker image push aciddensity/arkcluster:dev
 
 all: clean build push
