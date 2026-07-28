@@ -38,6 +38,7 @@ services:
       - cluster:/cluster
     ports:
       - "15000-15003:15000-15003/udp"
+      - "15003:15003/tcp"
 
   valguero:
     image: r15ch13/arkcluster:latest
@@ -76,6 +77,7 @@ services:
       - cluster:/cluster
     ports:
       - "15010-15013:15010-15013/udp"
+      - "15013:15013/tcp"
 
 volumes:
   data_island:

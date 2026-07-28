@@ -1,21 +1,23 @@
 # ARK: Survival Evolved - Docker Cluster
 
-Docker build for managing an __ARK: Survival Evolved__ server cluster.
+Docker build for managing an **ARK: Survival Evolved** server cluster.
 
 This image uses [Ark Server Tools](https://github.com/arkmanager/ark-server-tools) to manage an ark server and is forked from [boerngen-schmidt/Ark-docker](https://hub.docker.com/r/boerngenschmidt/ark-docker/).
 
-*If you use an old volume, get the new arkmanager.cfg in the template directory.*
+_If you use an old volume, get the new arkmanager.cfg in the default directory._
 
-__Don't forget to use `docker pull r15ch13/arkcluster` to get the latest version of the image__
+**Don't forget to use `docker pull r15ch13/arkcluster` to get the latest version of the image**
 
 ## Features
- - Easy install (no steamcmd / lib32... to install)
- - Easy access to ark config file
- - Mods handling (via Ark Server Tools)
- - `docker stop` is a clean stop
- - Auto upgrading of arkmanager
+
+- Easy install (no steamcmd / lib32... to install)
+- Easy access to ark config file
+- Mods handling (via Ark Server Tools)
+- `docker stop` is a clean stop
+- Auto upgrading of arkmanager
 
 ## Usage
+
 Fast & Easy cluster setup via docker compose:
 
 ```yaml
@@ -59,6 +61,7 @@ services:
       - cluster:/cluster
     ports:
       - "15000-15003:15000-15003/udp"
+      - "15003:15003/tcp"
 
   valguero:
     image: r15ch13/arkcluster:latest
@@ -97,6 +100,7 @@ services:
       - cluster:/cluster
     ports:
       - "15010-15013:15010-15013/udp"
+      - "15013:15013/tcp"
 
 volumes:
   data_island:
@@ -105,21 +109,21 @@ volumes:
 ```
 
 ## Volumes
-+ __/ark__ : Working directory :
-    + `/ark/server` : Server files and data.
-    + `/ark/log` : logs
-    + `/ark/backup` : backups
-    + `/ark/arkmanager.cfg` : config file for Ark Server Tools
-    + `/ark/crontab` : crontab config file
-    + `/ark/server/ShooterGame/Saved/Config/LinuxServer/Game.ini` : ark Game.ini config file
-    + `/ark/server/ShooterGame/Saved/Config/LinuxServer/GameUserSetting.ini` : ark GameUserSetting.ini config file
-    + `/ark/template` : Default config files
-    + `/ark/template/arkmanager.cfg` : default config file for Ark Server Tools
-    + `/ark/template/crontab` : default config file for crontab
-    + `/ark/staging` : default directory if you use the --downloadonly option when updating.
-+ __/cluster__ : Cluster volume to share with other instances
-    + `/cluster/myclusterid.Game.ini` : ark Game.ini config file which will be copied on every start
-    + `/cluster/myclusterid.GameUserSetting.ini` : ark GameUserSetting.ini config file which will be copied on every start
+
+- **/ark** : Working directory :
+  - `/ark/server` : Server files and data.
+  - `/ark/log` : logs
+  - `/ark/backup` : backups
+  - `/ark/arkmanager.cfg` : config file for Ark Server Tools
+  - `/ark/server/ShooterGame/Saved/Config/LinuxServer/Game.ini` : ark Game.ini config file
+  - `/ark/server/ShooterGame/Saved/Config/LinuxServer/GameUserSetting.ini` : ark GameUserSetting.ini config file
+  - `/ark/default` : Default config files
+  - `/ark/default/arkmanager.cfg` : default config file for Ark Server Tools
+  - `/ark/staging` : default directory if you use the --downloadonly option when updating.
+- **/cluster** : Cluster volume to share with other instances
+  - `/cluster/myclusterid.Game.ini` : ark Game.ini config file which will be copied on every start
+  - `/cluster/myclusterid.GameUserSetting.ini` : ark GameUserSetting.ini config file which will be copied on every start
 
 ## Known issues
+
 Currently none
