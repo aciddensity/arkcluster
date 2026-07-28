@@ -1,0 +1,83 @@
+version: "3"
+
+services:
+  island:
+    image: r15ch13/arkcluster:latest
+    deploy:
+      mode: global
+    environment:
+      CRON_AUTO_UPDATE: "0 */3 * * *"
+      CRON_AUTO_BACKUP: "0 */1 * * *"
+      UPDATEONSTART: 1
+      BACKUPONSTART: 1
+      BACKUPONSTOP: 1
+      WARNONSTOP: 1
+      USER_ID: 1000
+      GROUP_ID: 1000
+      TZ: "UTC"
+      MAX_BACKUP_SIZE: 500
+      SERVERMAP: "TheIsland"
+      SESSION_NAME: "ARK Cluster TheIsland"
+      MAX_PLAYERS: 15
+      RCON_ENABLE: "True"
+      QUERY_PORT: 15000
+      GAME_PORT: 15002
+      RCON_PORT: 15003
+      SERVER_PVE: "False"
+      SERVER_PASSWORD: ""
+      ADMIN_PASSWORD: "keepmesecret"
+      SPECTATOR_PASSWORD: "keepmesecret"
+      MODS: "731604991"
+      CLUSTER_ID: "myclusterid"
+      GAME_USERSETTINGS_INI_PATH: "/cluster/myclusterid.GameUserSettings.ini"
+      GAME_INI_PATH: "/cluster/myclusterid.Game.ini"
+      KILL_PROCESS_TIMEOUT: 300
+      KILL_ALL_PROCESSES_TIMEOUT: 300
+    volumes:
+      - data_island:/ark
+      - cluster:/cluster
+    ports:
+      - "15000-15003:15000-15003/udp"
+
+  valguero:
+    image: r15ch13/arkcluster:latest
+    deploy:
+      mode: global
+    environment:
+      CRON_AUTO_UPDATE: "15 */3 * * *"
+      CRON_AUTO_BACKUP: "15 */1 * * *"
+      UPDATEONSTART: 1
+      BACKUPONSTART: 1
+      BACKUPONSTOP: 1
+      WARNONSTOP: 1
+      USER_ID: 1000
+      GROUP_ID: 1000
+      TZ: "UTC"
+      MAX_BACKUP_SIZE: 500
+      SERVERMAP: "Valguero_P"
+      SESSION_NAME: "ARK Cluster Valguero"
+      MAX_PLAYERS: 15
+      RCON_ENABLE: "False"
+      QUERY_PORT: 15010
+      GAME_PORT: 15012
+      RCON_PORT: 15013
+      SERVER_PVE: "False"
+      SERVER_PASSWORD: ""
+      ADMIN_PASSWORD: "keepmesecret"
+      SPECTATOR_PASSWORD: "keepmesecret"
+      MODS: "731604991"
+      CLUSTER_ID: "myclusterid"
+      GAME_USERSETTINGS_INI_PATH: "/cluster/myclusterid.GameUserSettings.ini"
+      GAME_INI_PATH: "/cluster/myclusterid.Game.ini"
+      KILL_PROCESS_TIMEOUT: 300
+      KILL_ALL_PROCESSES_TIMEOUT: 300
+    volumes:
+      - data_valguero:/ark
+      - cluster:/cluster
+    ports:
+      - "15010-15013:15010-15013/udp"
+
+volumes:
+  data_island:
+  data_valguero:
+  cluster:
