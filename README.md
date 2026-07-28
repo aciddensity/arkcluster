@@ -108,6 +108,25 @@ volumes:
   cluster:
 ```
 
+### Secrets
+
+Password variables are optional and default to empty. For production, mount each password as a secret and set its corresponding file variable instead of putting the value directly in the environment:
+
+```yaml
+services:
+  island:
+    environment:
+      ADMIN_PASSWORD_FILE: /run/secrets/ark_admin_password
+    secrets:
+      - ark_admin_password
+
+secrets:
+  ark_admin_password:
+    file: ./secrets/admin_password.txt
+```
+
+`SERVER_PASSWORD_FILE`, `ADMIN_PASSWORD_FILE`, and `SPECTATOR_PASSWORD_FILE` are supported. Do not set both the direct variable and its `_FILE` counterpart.
+
 ## Volumes
 
 - **/ark** : Working directory :

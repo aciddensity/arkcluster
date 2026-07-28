@@ -46,6 +46,23 @@ USER_ID=$((10#$USER_ID))
 GROUP_ID=$((10#$GROUP_ID))
 export USER_ID GROUP_ID
 
+for secret_name in SERVER_PASSWORD ADMIN_PASSWORD SPECTATOR_PASSWORD; do
+    secret_file_name="${secret_name}_FILE"
+    secret_file="${!secret_file_name:-}"
+    if [ -n "${!secret_name:-}" ] && [ -n "$secret_file" ]; then
+        log "Set either $secret_name or $secret_file_name, not both."
+        exit 1
+    fi
+    if [ -n "$secret_file" ]; then
+        if [ ! -f "$secret_file" ] || [ ! -r "$secret_file" ]; then
+            log "$secret_file_name must point to a readable file."
+            exit 1
+        fi
+        printf -v "$secret_name" '%s' "$(<"$secret_file")"
+        export "$secret_name"
+    fi
+done
+
 existing_user=$(getent passwd "$USER_ID" | cut -d: -f1)
 if [ -n "$existing_user" ] && [ "$existing_user" != steam ]; then
     log "USER_ID $USER_ID is already assigned to user '$existing_user'."
@@ -113,7 +130,8 @@ while IFS= read -r variable_name; do
     esac
     printf 'export %s=%q\n' "$variable_name" "${!variable_name}" >> /etc/container_environment.sh
 done < <(compgen -e)
-chmod 0644 /etc/container_environment.sh
+chown root:steam /etc/container_environment.sh
+chmod 0640 /etc/container_environment.sh
 /usr/sbin/cron
 
 # We overwrite the default file each time
