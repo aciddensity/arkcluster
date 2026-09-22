@@ -133,7 +133,10 @@ while IFS= read -r variable_name; do
 done < <(compgen -e)
 chown root:steam /etc/container_environment.sh
 chmod 0640 /etc/container_environment.sh
-/usr/sbin/cron
+if ! /usr/sbin/cron; then
+    log "Failed to start cron; scheduled backups and updates are unavailable."
+    exit 1
+fi
 
 # We overwrite the default file each time
 cp /home/steam/arkmanager-user.cfg /ark/default/arkmanager.cfg

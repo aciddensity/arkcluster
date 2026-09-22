@@ -1,8 +1,6 @@
-version: "3"
-
 services:
   island:
-    image: aciddensity/arkcluster:dev
+    image: aciddensity/arkcluster:latest
     deploy:
       mode: global
     environment:
@@ -31,8 +29,6 @@ services:
       CLUSTER_ID: "myclusterid"
       GAME_USERSETTINGS_INI_PATH: "/cluster/myclusterid.GameUserSettings.ini"
       GAME_INI_PATH: "/cluster/myclusterid.Game.ini"
-      KILL_PROCESS_TIMEOUT: 300
-      KILL_ALL_PROCESSES_TIMEOUT: 300
     volumes:
       - data_island:/ark
       - cluster:/cluster
@@ -45,7 +41,7 @@ services:
       - "15003:15003/tcp"
 
   valguero:
-    image: aciddensity/arkcluster:dev
+    image: aciddensity/arkcluster:latest
     deploy:
       mode: global
     environment:
@@ -74,8 +70,6 @@ services:
       CLUSTER_ID: "myclusterid"
       GAME_USERSETTINGS_INI_PATH: "/cluster/myclusterid.GameUserSettings.ini"
       GAME_INI_PATH: "/cluster/myclusterid.Game.ini"
-      KILL_PROCESS_TIMEOUT: 300
-      KILL_ALL_PROCESSES_TIMEOUT: 300
     volumes:
       - data_valguero:/ark
       - cluster:/cluster

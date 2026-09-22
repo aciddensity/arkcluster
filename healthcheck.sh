@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if ! pidof cron > /dev/null; then
+    echo "Cron: Not running; scheduled backups and updates are unavailable."
+    exit 1
+fi
+
 source /etc/arkmanager/arkmanager.cfg
 
 SERVER_PID=$(pidof ShooterGameServer)
