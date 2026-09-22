@@ -90,12 +90,13 @@ fi
 [ ! -d /ark/log ] && mkdir /ark/log
 [ ! -d /ark/backup ] && mkdir /ark/backup
 [ ! -d /ark/staging ] && mkdir /ark/staging
+[ ! -d /ark/default ] && mkdir /ark/default
 [ ! -d /ark/steam ] && mkdir /ark/steam
 [ ! -d /ark/.steam ] && mkdir /ark/.steam
 
 # Own the required directory roots, then migrate only files carrying the old
 # steam IDs. This preserves files deliberately owned by other users.
-chown steam:steam /ark /cluster /home/steam /ark/log /ark/backup /ark/staging /ark/steam /ark/.steam
+chown steam:steam /ark /cluster /home/steam /ark/log /ark/backup /ark/staging /ark/default /ark/steam /ark/.steam
 if [ "$old_group_id" -ne "$GROUP_ID" ]; then
     find /ark /cluster /home/steam -xdev -gid "$old_group_id" -exec chgrp steam {} +
 fi
@@ -139,6 +140,7 @@ cp /home/steam/arkmanager-user.cfg /ark/default/arkmanager.cfg
 
 # Copy default arkmanager.cfg if it doesn't exist
 [ ! -f /ark/arkmanager.cfg ] && cp /home/steam/arkmanager-user.cfg /ark/arkmanager.cfg
+chown steam:steam /ark/default/arkmanager.cfg /ark/arkmanager.cfg
 if [ ! -L /etc/arkmanager/instances/main.cfg ]; then
     rm /etc/arkmanager/instances/main.cfg
     ln -s /ark/arkmanager.cfg /etc/arkmanager/instances/main.cfg

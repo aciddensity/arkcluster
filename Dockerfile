@@ -1,14 +1,15 @@
 # syntax=docker/dockerfile:1
 FROM debian:13-slim
 
-LABEL org.opencontainers.image.authors="Richard Kuhnt <r15ch13+git@gmail.com>" \
+LABEL org.opencontainers.image.authors="Acid Density <acid.density@gmail.com>" \
       org.opencontainers.image.title="ARK Cluster Image" \
       org.opencontainers.image.description="ARK Cluster Image" \
-      org.opencontainers.image.url="https://github.com/r15ch13/arkcluster" \
-      org.opencontainers.image.source="https://github.com/r15ch13/arkcluster"
+      org.opencontainers.image.url="https://github.com/aciddensity/arkcluster" \
+      org.opencontainers.image.source="https://github.com/aciddensity/arkcluster"
 
 RUN <<EOT bash # Install dependencies and clean up
     set -eux
+    test "$(dpkg --print-architecture)" = amd64
     apt-get update
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         adduser \
@@ -27,6 +28,7 @@ RUN <<EOT bash # Install dependencies and clean up
         procps \
         rsync \
         sed \
+        systemd-standalone-sysusers \
         sysvinit-utils \
         tar \
         tini \
@@ -56,7 +58,7 @@ RUN <<EOT bash # Install ark-server-tools
     echo "${ARKMANAGER_SHA256}  ark-server-tools.tar.gz" | sha256sum --check --strict -
     tar xzf ark-server-tools.tar.gz
     pushd "./ark-server-tools-${ARKMANAGER_VERSION}/tools"
-    ./install.sh steam --bindir=/usr/bin
+    ./install.sh steam --prefix=/usr
     popd
     rm -r ark-server-tools.tar.gz "ark-server-tools-${ARKMANAGER_VERSION}"
 EOT

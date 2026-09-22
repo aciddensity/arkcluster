@@ -2,7 +2,7 @@ version: "3"
 
 services:
   island:
-    image: r15ch13/arkcluster:latest
+    image: aciddensity/arkcluster:dev
     deploy:
       mode: global
     environment:
@@ -24,9 +24,9 @@ services:
       GAME_PORT: 15002
       RCON_PORT: 15003
       SERVER_PVE: "False"
-      SERVER_PASSWORD: ""
-      ADMIN_PASSWORD: "keepmesecret"
-      SPECTATOR_PASSWORD: "keepmesecret"
+      SERVER_PASSWORD_FILE: "/run/secrets/server_password"
+      ADMIN_PASSWORD_FILE: "/run/secrets/admin_password"
+      SPECTATOR_PASSWORD_FILE: "/run/secrets/spectator_password"
       MODS: "731604991"
       CLUSTER_ID: "myclusterid"
       GAME_USERSETTINGS_INI_PATH: "/cluster/myclusterid.GameUserSettings.ini"
@@ -36,12 +36,16 @@ services:
     volumes:
       - data_island:/ark
       - cluster:/cluster
+    secrets:
+      - server_password
+      - admin_password
+      - spectator_password
     ports:
       - "15000-15003:15000-15003/udp"
       - "15003:15003/tcp"
 
   valguero:
-    image: r15ch13/arkcluster:latest
+    image: aciddensity/arkcluster:dev
     deploy:
       mode: global
     environment:
@@ -63,9 +67,9 @@ services:
       GAME_PORT: 15012
       RCON_PORT: 15013
       SERVER_PVE: "False"
-      SERVER_PASSWORD: ""
-      ADMIN_PASSWORD: "keepmesecret"
-      SPECTATOR_PASSWORD: "keepmesecret"
+      SERVER_PASSWORD_FILE: "/run/secrets/server_password"
+      ADMIN_PASSWORD_FILE: "/run/secrets/admin_password"
+      SPECTATOR_PASSWORD_FILE: "/run/secrets/spectator_password"
       MODS: "731604991"
       CLUSTER_ID: "myclusterid"
       GAME_USERSETTINGS_INI_PATH: "/cluster/myclusterid.GameUserSettings.ini"
@@ -75,6 +79,10 @@ services:
     volumes:
       - data_valguero:/ark
       - cluster:/cluster
+    secrets:
+      - server_password
+      - admin_password
+      - spectator_password
     ports:
       - "15010-15013:15010-15013/udp"
       - "15013:15013/tcp"
@@ -83,3 +91,11 @@ volumes:
   data_island:
   data_valguero:
   cluster:
+
+secrets:
+  server_password:
+    file: ./secrets/server_password.txt
+  admin_password:
+    file: ./secrets/admin_password.txt
+  spectator_password:
+    file: ./secrets/spectator_password.txt
