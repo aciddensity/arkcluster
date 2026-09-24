@@ -9,6 +9,7 @@ This image uses [Ark Server Tools](https://github.com/arkmanager/ark-server-tool
 Existing `/ark/arkmanager.cfg` files remain in place. Compare your configuration with `/ark/default/arkmanager.cfg` after an image update.
 
 Use `docker pull aciddensity/arkcluster:latest` to download the most recent release image.
+Alternatively you can pull from GHCR `docker pull ghcr.io/aciddensity/arkcluster:latest`.
 
 ## Features
 
@@ -22,7 +23,7 @@ The Debian 13 migration audit is in [MIGRATION-AUDIT.md](MIGRATION-AUDIT.md). It
 
 ## Usage
 
-The Compose example uses published release images. Prepare the password files before you start the services.
+The Compose example uses published release images. Create the three password files in [Secrets](#secrets) before you start the services.
 
 ```yaml
 services:
@@ -124,9 +125,17 @@ secrets:
 
 ### Secrets
 
-The Compose example reads passwords from `secrets/server_password.txt`, `secrets/admin_password.txt`, and `secrets/spectator_password.txt`. The `secrets/` directory is ignored by Git. Remove an optional password's environment and secret entries to leave it empty.
+The Compose example mounts three password files as secrets. Both example services use the same files and passwords. Create these files next to `docker-compose.yml` before you start Compose:
 
-`SERVER_PASSWORD_FILE`, `ADMIN_PASSWORD_FILE`, and `SPECTATOR_PASSWORD_FILE` are supported. Direct password variables remain available for compatibility, but do not set both forms for the same password.
+1. Create the `secrets/` directory with access limited to your account.
+2. Create `secrets/server_password.txt`, `secrets/admin_password.txt`, and `secrets/spectator_password.txt`. Put one password in each file. Do not add quotes.
+3. Limit access to the password files. For example, run `chmod 600 secrets/*.txt` on Linux.
+
+The `secrets/` directory is ignored by Git. Compose mounts each file at `/run/secrets/<secret_name>` in the container. The matching `*_PASSWORD_FILE` setting tells `run.sh` which mounted file to read. The startup script removes trailing newline characters from the password.
+
+To leave a password empty, remove its `*_PASSWORD_FILE` setting and its entry in `secrets:` from **each service**. Also remove its definition from the top-level `secrets:` section. If you remove all password secrets, remove both service-level `secrets:` sections and the top-level `secrets:` section.
+
+The image supports `SERVER_PASSWORD_FILE`, `ADMIN_PASSWORD_FILE`, and `SPECTATOR_PASSWORD_FILE`. You can instead set `SERVER_PASSWORD`, `ADMIN_PASSWORD`, or `SPECTATOR_PASSWORD` directly. Do not set a password variable and its matching `_FILE` variable at the same time. The container exits if it cannot read a configured file or if both forms have nonempty values.
 
 ## Volumes
 

@@ -86,6 +86,8 @@ volumes:
   data_valguero:
   cluster:
 
+# Create all three files under ./secrets before starting Compose.
+# Both example services use the same password files. See README.md for optional secrets.
 secrets:
   server_password:
     file: ./secrets/server_password.txt
