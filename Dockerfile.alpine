@@ -1,0 +1,153 @@
+# syntax=docker/dockerfile:1
+FROM debian:13-slim AS glibc
+
+# SteamCMD and the ARK server need glibc, including its 32-bit loader.
+RUN <<EOT bash
+    set -eux
+    test "$(dpkg --print-architecture)" = amd64
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        libc6-i386 \
+        lib32gcc-s1 \
+        libstdc++6
+    rm -rf /var/lib/apt/lists/*
+EOT
+
+FROM alpine:3.24
+
+LABEL org.opencontainers.image.authors="Acid Density <acid.density@gmail.com>" \
+      org.opencontainers.image.title="ARK Cluster Image" \
+      org.opencontainers.image.description="ARK Cluster Image" \
+      org.opencontainers.image.url="https://github.com/aciddensity/arkcluster" \
+      org.opencontainers.image.source="https://github.com/aciddensity/arkcluster"
+
+RUN <<EOT sh # Install dependencies
+    set -eux
+    test "$(uname -m)" = x86_64
+    apk add --no-cache \
+        bash \
+        bzip2 \
+        ca-certificates \
+        coreutils \
+        cronie \
+        curl \
+        findutils \
+        lsof \
+        musl-utils \
+        ncurses \
+        ncurses-terminfo-base \
+        perl \
+        perl-compress-raw-zlib \
+        procps-ng \
+        rsync \
+        runuser \
+        sed \
+        shadow \
+        tar \
+        tini \
+        tzdata
+    TERM=linux tput sc >/dev/null
+    TERM=linux tput rc >/dev/null
+    TERM=linux tput ed >/dev/null
+EOT
+
+# Keep Alpine's musl tools and add glibc only for SteamCMD and ARK binaries.
+COPY --from=glibc /usr/lib/x86_64-linux-gnu/ /usr/lib/x86_64-linux-gnu/
+COPY --from=glibc /usr/lib32/ /usr/lib32/
+COPY --from=glibc /usr/lib64/ /usr/lib64/
+COPY --from=glibc /etc/nsswitch.conf /etc/nsswitch.conf
+RUN <<EOT sh
+    set -eux
+    ln -s /usr/lib/x86_64-linux-gnu /lib/x86_64-linux-gnu
+    ln -s /usr/lib32 /lib32
+    ln -s /usr/lib64 /lib64
+    ln -s /usr/lib32/ld-linux.so.2 /lib/ld-linux.so.2
+    test -x /lib64/ld-linux-x86-64.so.2
+    test -x /lib/ld-linux.so.2
+EOT
+
+# Update each checksum together with its corresponding archive/version.
+ARG ARKMANAGER_VERSION=1.6.69
+ARG ARKMANAGER_SHA256=29c541f040b6fa1beb1aefcd5b2e58701f01680a2cf8ae87783f18bcf45a0e55
+ARG STEAMCMD_SHA256=cebf0046bfd08cf45da6bc094ae47aa39ebf4155e5ede41373b579b8f1071e7c
+
+ENV USER_ID=1000 \
+    GROUP_ID=1000
+
+RUN <<EOT bash # Add steam user
+    set -eux
+    groupadd --gid "$GROUP_ID" steam
+    useradd --uid "$USER_ID" --gid "$GROUP_ID" --create-home --home-dir /home/steam --shell /bin/bash steam
+EOT
+
+RUN <<EOT bash # Install ark-server-tools
+    set -eux
+    curl -fsSL --retry 3 -o ark-server-tools.tar.gz "https://github.com/arkmanager/ark-server-tools/archive/refs/tags/v${ARKMANAGER_VERSION}.tar.gz"
+    echo "${ARKMANAGER_SHA256}  ark-server-tools.tar.gz" | sha256sum --check --strict -
+    tar xzf ark-server-tools.tar.gz
+    pushd "./ark-server-tools-${ARKMANAGER_VERSION}/tools"
+    ./install.sh steam --prefix=/usr
+    popd
+    rm -r ark-server-tools.tar.gz "ark-server-tools-${ARKMANAGER_VERSION}"
+EOT
+
+RUN <<EOT bash # Create required directories
+    mkdir -p /ark/{log,backup,staging,default,steam,.steam}
+    mkdir -p /cluster
+EOT
+
+# Setup arkcluster
+COPY run.sh /usr/local/bin/run.sh
+RUN chmod +x /usr/local/bin/run.sh
+COPY arkmanager.cfg /etc/arkmanager/arkmanager.cfg
+COPY arkmanager-user.cfg /home/steam/arkmanager-user.cfg
+
+# Healthcheck
+COPY healthcheck.sh /bin/healthcheck
+RUN chmod +x /bin/healthcheck
+HEALTHCHECK --interval=10s --timeout=10s --start-period=10s --retries=3 CMD ["/bin/healthcheck"]
+
+# Fix permissions
+RUN chown steam:steam -R /ark /cluster /home/steam
+
+USER steam
+RUN <<EOT bash # Install steamcmd
+    set -eux
+    ln -s /ark/steam /home/steam/Steam
+    ln -s /ark/.steam /home/steam/.steam
+    mkdir -p ~/steamcmd && cd ~/steamcmd
+    curl -fsSL --retry 3 -o steamcmd_linux.tar.gz "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
+    echo "${STEAMCMD_SHA256}  steamcmd_linux.tar.gz" | sha256sum --check --strict -
+    tar xzf steamcmd_linux.tar.gz
+    rm steamcmd_linux.tar.gz
+    ./steamcmd.sh +quit
+EOT
+
+# Expose environment variables
+ENV CRON_AUTO_UPDATE="0 */3 * * *" \
+    CRON_AUTO_BACKUP="0 */1 * * *" \
+    UPDATEONSTART=1 \
+    BACKUPONSTART=1 \
+    BACKUPONSTOP=1 \
+    WARNONSTOP=1 \
+    TZ=UTC \
+    MAX_BACKUP_SIZE=500 \
+    SERVERMAP="TheIsland" \
+    SESSION_NAME="ARK Docker" \
+    MAX_PLAYERS=15 \
+    RCON_ENABLE="True" \
+    QUERY_PORT=15000 \
+    GAME_PORT=15002 \
+    RCON_PORT=15003 \
+    SERVER_PVE="False" \
+    MODS="" \
+    CLUSTER_ID="keepmesecret" \
+    GAME_USERSETTINGS_INI_PATH="" \
+    GAME_INI_PATH="" \
+    CRON_DAEMON="crond"
+
+USER root
+VOLUME /ark /cluster
+WORKDIR /ark
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["/usr/local/bin/run.sh"]

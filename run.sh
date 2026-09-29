@@ -133,7 +133,7 @@ while IFS= read -r variable_name; do
 done < <(compgen -e)
 chown root:steam /etc/container_environment.sh
 chmod 0640 /etc/container_environment.sh
-if ! /usr/sbin/cron; then
+if ! "${CRON_DAEMON:-/usr/sbin/cron}"; then
     log "Failed to start cron; scheduled backups and updates are unavailable."
     exit 1
 fi

@@ -171,13 +171,15 @@ To publish a release:
 2. Publish a GitHub release for that tag. Leave the prerelease option disabled.
 3. Check that the image publication workflow succeeds for Docker Hub and GHCR.
 
-CI builds images only when a GitHub release is published. Branch pushes, tag pushes alone, pull requests, and nightly schedules do not trigger builds. Drafts and prereleases do not publish images.
+CI publishes images only when a GitHub release is published. Branch pushes, tag pushes alone, and nightly schedules do not publish images. Drafts and prereleases do not publish images. Pull requests that change the Alpine build or its runtime files trigger an Alpine build check without publication. You can also start this check manually from GitHub Actions.
 
-Each image receives the exact release tag, such as `aciddensity/arkcluster:26.09.0`. The workflow then updates `:latest` for the most recently published eligible release, ordered by publication time. An older release rerun cannot promote its image over a newer release. If publication fails, inspect the workflow and rerun it after correction. Updates to the two registries are separate operations.
+The Debian image receives the release tag, such as `aciddensity/arkcluster:26.09.0`. The Alpine image receives the same tag with an `-alpine` suffix, such as `aciddensity/arkcluster:26.09.0-alpine`. The workflow updates `:latest` and `:latest-alpine` for the most recently published eligible release. Publication time determines which release is most recent. An older release rerun cannot replace the tags for a newer release. If publication fails, inspect the workflow and rerun it after correction. Each registry update is a separate operation.
 
-Use a version tag in Compose to select a specific release. Use `:latest` to select the most recent published release image. A new release does not update running containers automatically.
+Use a version tag in Compose to select a specific release and base image. The Compose example uses Debian `:latest`. Use `:latest-alpine` to select the most recent published Alpine image. A new release does not update running containers automatically.
 
-For a local build, run `make build` from this repository. This command tags the local image as `aciddensity/arkcluster:latest`. Compose has no `build` section and does not build the image itself.
+For a local Debian build, run `make build` from this repository. This command tags the local image as `aciddensity/arkcluster:latest`. For a local Alpine build, run `make build-alpine`. This command tags the local image as `aciddensity/arkcluster:latest-alpine`. Compose has no `build` section and does not build the image itself.
+
+The Alpine image includes Alpine tools and glibc libraries for SteamCMD and ARK. Treat this variant as experimental until you verify installation, game connections, mods, backups, updates, and shutdown on your server.
 
 ## Operator responsibilities
 

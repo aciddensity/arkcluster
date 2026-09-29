@@ -91,3 +91,47 @@ jobs:
             image_name=${image_tag%:*}
             docker buildx imagetools create --tag "$image_name:latest" "$image_name@$IMAGE_DIGEST"
           done <<< "$image_tags"
+
+      - name: Extract Alpine image metadata
+        id: meta_alpine
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ github.repository }}
+            ghcr.io/${{ github.repository }}
+          flavor: latest=false
+          tags: |
+            type=raw,value=${{ github.event.release.tag_name }}-alpine
+
+      - name: Build and publish Alpine release image
+        id: build_alpine
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile.alpine
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta_alpine.outputs.tags }}
+          labels: ${{ steps.meta_alpine.outputs.labels }}
+
+      - name: Update latest-alpine for the most recently published release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ github.event.release.id }}
+          IMAGE_METADATA: ${{ steps.meta_alpine.outputs.json }}
+          IMAGE_DIGEST: ${{ steps.build_alpine.outputs.digest }}
+        run: |
+          latest_release_id=$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" |
+            jq -er 'flatten | map(select(.draft == false and .prerelease == false)
+              | select(.tag_name | test("^[0-9]{2}\\.(0[1-9]|1[0-2])\\.(0|[1-9][0-9]*)$")))
+              | max_by([.published_at, .id]) | .id')
+          if [[ "$RELEASE_ID" != "$latest_release_id" ]]; then
+            echo 'A newer release exists; keeping its latest-alpine tag.'
+            exit 0
+          fi
+          image_tags=$(jq -er '.tags[]' <<< "$IMAGE_METADATA")
+          while IFS= read -r image_tag; do
+            image_name=${image_tag%:*}
+            docker buildx imagetools create --tag "$image_name:latest-alpine" "$image_name@$IMAGE_DIGEST"
+          done <<< "$image_tags"
