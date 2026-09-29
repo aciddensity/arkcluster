@@ -1,5 +1,7 @@
 # ARK: Survival Evolved - Docker Cluster
 
+[![Publish release image](https://github.com/aciddensity/arkcluster/actions/workflows/ci.yml/badge.svg)](https://github.com/aciddensity/arkcluster/actions/workflows/ci.yml)
+
 Docker build for managing an **ARK: Survival Evolved** server cluster.
 
 The code repository is [aciddensity/arkcluster](https://github.com/aciddensity/arkcluster). The Docker image is [aciddensity/arkcluster](https://hub.docker.com/r/aciddensity/arkcluster).
